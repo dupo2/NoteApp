@@ -1,0 +1,79 @@
+<main class="container py-4">
+  <header class="text-center mb-5">
+    <h1 class="display-4">Mano Užrašai</h1>
+    <p class="lead text-muted">Kurkite ir tvarkykite savo mintis.</p>
+  </header>
+
+  <!-- Note Creation Form -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-md-8 col-lg-6">
+      <form [formGroup]="noteForm" (ngSubmit)="addNote()" class="card p-4 shadow-sm">
+        <div class="mb-3">
+          <label for="title" class="visually-hidden">Antraštė</label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            placeholder="Antraštė..."
+            class="form-control form-control-lg"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="text" class="visually-hidden">Tekstas</label>
+          <textarea
+            id="text"
+            formControlName="text"
+            placeholder="Užrašo tekstas..."
+            rows="4"
+            class="form-control"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          [disabled]="noteForm.invalid"
+          class="btn btn-primary btn-lg w-100"
+        >
+          Pridėti užrašą
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Notes List -->
+  <section>
+    @if (notes().length > 0) {
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+        @for (note of notes(); track note.id) {
+          <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h2 class="card-title h5">{{ note.title }}</h2>
+                    <p class="card-text flex-grow-1" style="white-space: pre-wrap;">{{ note.text }}</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0 d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        {{ note.createdAt.toLocaleDateString('lt-LT') }}
+                    </small>
+                    <button (click)="deleteNote(note.id)" class="btn btn-sm btn-outline-danger" aria-label="Ištrinti užrašą">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="text-center py-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="text-secondary mx-auto mb-3" style="width: 3rem; height: 3rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 h5">Jokių užrašų</h3>
+        <p class="mt-1 text-muted">Pradėkite kurdami naują užrašą.</p>
+      </div>
+    }
+  </section>
+</main>

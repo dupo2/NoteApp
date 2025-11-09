@@ -1,0 +1,5 @@
+{
+  "name": "Užrašų Aplikacija",
+  "description": "Paprasta užrašų aplikacija, leidžianti kurti, peržiūrėti ir trinti užrašus, panašiai kaip Google Keep. Visi duomenys saugomi naršyklės LocalStorage.",
+  "requestFramePermissions": []
+}
