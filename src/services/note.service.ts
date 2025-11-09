@@ -1,56 +1,63 @@
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Note } from '../note.model';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore,
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  orderBy,
+  Timestamp 
+} from 'firebase/firestore';
+
+// Firebase config should be in environment variables in production
+const firebaseConfig = {
+  apiKey: "AIzaSyAt4MWhM8zIeIJl8sHXQaDfQjXi2AVIY74",
+  authDomain: "notes-81e2d.firebaseapp.com",
+  projectId: "notes-81e2d",
+  storageBucket: "notes-81e2d.firebasestorage.app",
+  messagingSenderId: "596349947919",
+  appId: "1:596349947919:web:ab5ae7077d18f095a0d37a"
+};
 
 @Injectable({
   providedIn: 'root'
 })
 export class NoteService {
-  private notesSubject = new BehaviorSubject<Note[]>([]);
-  private readonly localStorageKey = 'notes';
+  private readonly app = initializeApp(firebaseConfig);
+  private readonly db = getFirestore(this.app);
+  private readonly notesCollection = collection(this.db, 'notes');
 
-  constructor() {
-    this.loadNotesFromLocalStorage();
+  getNotesStream(): Observable<Note[]> {
+    const notesQuery = query(this.notesCollection, orderBy('createdAt', 'desc'));
+
+    return new Observable<Note[]>(subscriber => {
+      const unsubscribe = onSnapshot(notesQuery, snapshot => {
+        const notes = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date()
+        })) as Note[];
+        subscriber.next(notes);
+      });
+
+      return () => unsubscribe();
+    });
   }
 
-  private loadNotesFromLocalStorage() {
-    const notesJson = localStorage.getItem(this.localStorageKey);
-    const notes = notesJson ? JSON.parse(notesJson) : [];
-    this.notesSubject.next(notes);
+  async addNote(note: Omit<Note, 'id'>): Promise<void> {
+    await addDoc(this.notesCollection, {
+      ...note,
+      createdAt: Timestamp.now()
+    });
   }
 
-  private saveNotesToLocalStorage(notes: Note[]) {
-    localStorage.setItem(this.localStorageKey, JSON.stringify(notes));
-    this.notesSubject.next(notes);
-  }
-
-  getNotes(): Observable<Note[]> {
-    return this.notesSubject.asObservable();
-  }
-
-  addNote(newNoteData: { title: string; text: string }) {
-    const currentNotes = this.notesSubject.getValue();
-    const newNote: Note = {
-      id: new Date().getTime().toString(), // Simple unique ID
-      title: newNoteData.title,
-      text: newNoteData.text,
-      createdAt: new Date()
-    };
-    const updatedNotes = [...currentNotes, newNote];
-    this.saveNotesToLocalStorage(updatedNotes);
-  }
-
-  deleteNote(noteId: string) {
-    const currentNotes = this.notesSubject.getValue();
-    const updatedNotes = currentNotes.filter(note => note.id !== noteId);
-    this.saveNotesToLocalStorage(updatedNotes);
-  }
-
-  updateNote(noteToUpdate: Note) {
-    const currentNotes = this.notesSubject.getValue();
-    const updatedNotes = currentNotes.map(note =>
-      note.id === noteToUpdate.id ? noteToUpdate : note
-    );
-    this.saveNotesToLocalStorage(updatedNotes);
+  async deleteNote(noteId: string): Promise<void> {
+    const noteRef = doc(this.db, 'notes', noteId);
+    await deleteDoc(noteRef);
   }
 }

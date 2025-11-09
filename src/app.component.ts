@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { Note } from './note.model';
@@ -22,14 +23,9 @@ export class AppComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    // Subscribe to the notes stream from the service
-    this.notesSubscription = this.noteService.getNotes().subscribe(notes => {
-      // When notes are loaded from JSON, `createdAt` is a string. Convert it back to a Date object.
-      const notesWithDates = notes.map(note => ({
-        ...note,
-        createdAt: new Date(note.createdAt)
-      }));
-      this.notes.set(notesWithDates);
+    // Subscribe to the notes stream from Firestore
+    this.notesSubscription = this.noteService.getNotesStream().subscribe(notes => {
+      this.notes.set(notes);
     });
   }
 
@@ -38,7 +34,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.notesSubscription?.unsubscribe();
   }
 
-  addNote(): void {
+  async addNote(): Promise<void> {
     if (this.noteForm.invalid) {
       return;
     }
@@ -46,13 +42,22 @@ export class AppComponent implements OnInit, OnDestroy {
     const newNote = {
       title: this.noteForm.value.title ?? 'Be pavadinimo',
       text: this.noteForm.value.text ?? '',
+      createdAt: new Date(),
     };
     
-    this.noteService.addNote(newNote);
-    this.noteForm.reset();
+    try {
+      await this.noteService.addNote(newNote);
+      this.noteForm.reset();
+    } catch (error) {
+      console.error('Error adding note:', error);
+    }
   }
 
-  deleteNote(id: string): void {
-    this.noteService.deleteNote(id);
+  async deleteNote(id: string): Promise<void> {
+    try {
+      await this.noteService.deleteNote(id);
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
   }
 }
